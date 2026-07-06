@@ -13,8 +13,9 @@
 #include "doomgeneric.h"
 #include "drm_out.h"
 #include "video_blit.h"
+#include "input_ev.h"
 
-void DG_Init(void) { if (drm_open() != 0) exit(1); }
+void DG_Init(void) { if (drm_open() != 0) exit(1); input_open(); }
 
 void DG_DrawFrame(void)
 {
@@ -24,7 +25,7 @@ void DG_DrawFrame(void)
 }
 void DG_SleepMs(uint32_t ms) { struct timespec t = { ms/1000, (long)(ms%1000)*1000000L }; nanosleep(&t, 0); }
 uint32_t DG_GetTicksMs(void) { struct timespec t; clock_gettime(CLOCK_MONOTONIC, &t); return (uint32_t)(t.tv_sec*1000 + t.tv_nsec/1000000); }
-int DG_GetKey(int *pressed, unsigned char *key) { (void)pressed; (void)key; return 0; }
+int DG_GetKey(int *pressed, unsigned char *key) { return input_poll(key, pressed); }
 void DG_SetWindowTitle(const char *title) { (void)title; }
 
 int main(int argc, char **argv)

@@ -1,13 +1,14 @@
 #!/bin/sh
-# Launched from erosq-ui Extras -> Games (no args). Free RAM + the ALSA PCM
-# device by stopping MPD, run Doom, then restore MPD. -mb caps Doom's zone heap
-# for the ~7.5MB board (tune down on HW if MemAvailable runs tight).
+# Launched from erosq-ui Extras -> Games (no args). Free RAM by stopping MPD,
+# run Doom, then restore MPD. -mb caps Doom's zone heap for the ~7.5MB board.
+#
+# -nosound: HITL-verified 2026-07-06 that streaming SFX to the ES9018K2M via
+# tinyalsa reliably resets the device after 15-100s (watchdog reset; -nosound
+# runs stable indefinitely, confirmed 150s+). The sound backend itself is
+# correct (SFX are audible), but sustained PCM streaming wedges the audio DMA
+# on this board. Re-enable by dropping -nosound once the driver path is fixed
+# (needs serial-console capture of the hang). See INTERFACES.md / memory.
 was_up=; pgrep mpd >/dev/null && was_up=1
-if [ "$was_up" ]; then
-    mpc stop 2>/dev/null; killall mpd 2>/dev/null
-    # killall only signals; wait (bounded) for mpd to actually release the PCM
-    # device so pcm_open in the sound backend doesn't lose the race.
-    i=0; while pgrep mpd >/dev/null 2>&1 && [ $i -lt 5 ]; do sleep 1; i=$((i+1)); done
-fi
-/usr/bin/doomgeneric -iwad /media/sd/games/DOOM1.WAD -mb 4
+[ "$was_up" ] && { mpc stop 2>/dev/null; killall mpd 2>/dev/null; }
+/usr/bin/doomgeneric -iwad /media/sd/games/DOOM1.WAD -mb 4 -nosound
 [ "$was_up" ] && mpd 2>/dev/null

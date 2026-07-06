@@ -20,9 +20,14 @@
 #include "sfx_mix.h"
 #include "tinyalsa/asoundlib.h"
 
-#define OUT_RATE   11025        /* ponytail: native DMX rate; HITL-tunable */
+/* The ES9018K2M DAC is stereo-only and rejects 11025 Hz (pcm_open "cannot set
+ * hw params"). It does CD-standard 44100/S16/stereo (what MPD feeds it), so we
+ * output that: SFX (11025 Hz mono DMX) are resampled to OUT_RATE via the
+ * per-channel path in I_EQ_StartChannel and duplicated L=R in I_EQ_Update. */
+#define OUT_RATE   44100        /* DAC-accepted rate; SFX resampled up to it */
+#define OUT_CH     2            /* DAC is stereo-only */
 #define TICRATE    35           /* doom sound tics/sec */
-#define TIC_FRAMES (OUT_RATE / TICRATE)   /* ~315 frames written per Update() */
+#define TIC_FRAMES (OUT_RATE / TICRATE)   /* mono frames mixed per Update() */
 
 /* i_sound.c's I_BindSoundVariables binds these two config vars under
  * FEATURE_SOUND; they normally live in the (excluded) SDL module. We don't
@@ -42,17 +47,26 @@ static boolean I_EQ_Init(boolean use_sfx_prefix)
 {
     use_prefix = use_sfx_prefix;
     struct pcm_config cfg = {0};
-    cfg.channels = 1;
+    cfg.channels = OUT_CH;
     cfg.rate = OUT_RATE;
     cfg.format = PCM_FORMAT_S16_LE;
-    cfg.period_size = 1024;
-    cfg.period_count = 4;
+    /* Large buffer (~370ms) so Doom's frame jitter never drains it: an underrun
+     * makes tinyalsa stop+re-prepare the DMA, and this board hangs on the audio
+     * DMA stop path -> watchdog reset. Keeping the ring full avoids that path. */
+    cfg.period_size = 2048;
+    cfg.period_count = 8;
     pcm = pcm_open(0, 0, PCM_OUT, &cfg);
     if (!pcm || !pcm_is_ready(pcm)) {
+#ifdef SFX_DEBUG
+        fprintf(stderr, "SFX Init: pcm_open FAILED: %s\n", pcm ? pcm_get_error(pcm) : "(null)");
+#endif
         if (pcm) pcm_close(pcm);
         pcm = NULL;
         return false;                     /* not selected -> game runs silent */
     }
+#ifdef SFX_DEBUG
+    fprintf(stderr, "SFX Init OK: rate=%d ch=%d S16, pcm ready\n", OUT_RATE, OUT_CH);
+#endif
     return true;
 }
 
@@ -101,6 +115,10 @@ static int I_EQ_StartSound(sfxinfo_t *sfx, int channel, int vol, int sep)
     if (rate <= 0) return -1;                     /* guard divide-by-zero in resample path */
     if (length > lumplen - 8 || length <= 48) return -1;
     I_EQ_StartChannel(channel, data + 24, (int)(length - 32), rate, vol);
+#ifdef SFX_DEBUG
+    fprintf(stderr, "SFX StartSound ch=%d vol=%d rate=%d len=%u lump=%d hdr=%02x%02x s0=%d\n",
+            channel, vol, rate, length - 32, lumpnum, data[0], data[1], (int)data[24] - 128);
+#endif
     return channel;
 }
 
@@ -124,9 +142,18 @@ static boolean I_EQ_SoundIsPlaying(int channel)
 static void I_EQ_Update(void)
 {
     if (!pcm) return;
-    int16_t buf[TIC_FRAMES];
-    sfx_mix(chans, buf, TIC_FRAMES);
-    pcm_writei(pcm, buf, TIC_FRAMES);     /* blocks -> natural backpressure */
+    static int16_t mono[TIC_FRAMES];
+    static int16_t buf[TIC_FRAMES * OUT_CH];      /* interleaved stereo out */
+    sfx_mix(chans, mono, TIC_FRAMES);
+    for (int f = 0; f < TIC_FRAMES; f++) { buf[f*OUT_CH] = mono[f]; buf[f*OUT_CH+1] = mono[f]; }  /* L=R */
+    int rc = pcm_writei(pcm, buf, TIC_FRAMES);   /* blocks -> natural backpressure */
+#ifdef SFX_DEBUG
+    static int n; int active = 0, peak = 0;
+    for (int c = 0; c < SFX_CHANNELS; c++) if (chans[c].active) active++;
+    for (int f = 0; f < TIC_FRAMES; f++) { int a = buf[f] < 0 ? -buf[f] : buf[f]; if (a > peak) peak = a; }
+    if ((n++ % 35) == 0 || rc < 0)
+        fprintf(stderr, "SFX Update #%d: writei rc=%d active=%d peak=%d\n", n, rc, active, peak);
+#endif
 }
 
 static void I_EQ_CacheSounds(sfxinfo_t *sounds, int num) { (void)sounds; (void)num; }

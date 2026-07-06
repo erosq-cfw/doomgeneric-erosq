@@ -19,6 +19,13 @@ done
 sed -i 's/#define DOOMGENERIC_RESX .*/#define DOOMGENERIC_RESX 320/' doomgeneric/doomgeneric/doomgeneric.h
 sed -i 's/#define DOOMGENERIC_RESY .*/#define DOOMGENERIC_RESY 200/' doomgeneric/doomgeneric/doomgeneric.h
 
+# --- Rebind for the erosq's limited buttons: the Play button emits KEY_ENTER
+#     (menu select). Make ENTER also fire in-game and confirm yes/no prompts, so
+#     one button does select + fire + quit-confirm (clean exit back to the UI).
+#     Idempotent. ---
+sed -i 's/^int key_fire = KEY_FIRE;/int key_fire = KEY_ENTER;/' doomgeneric/doomgeneric/m_controls.c
+sed -i "s/^int key_menu_confirm   = 'y';/int key_menu_confirm   = KEY_ENTER;/" doomgeneric/doomgeneric/m_controls.c
+
 # --- FEATURE_SOUND drags <SDL_mixer.h> into i_sound.c, but nothing from it is
 #     used there (the real SDL backend is i_sdlsound.c, which we exclude). Drop
 #     the dead include so -DFEATURE_SOUND links our tinyalsa DG_sound_module.

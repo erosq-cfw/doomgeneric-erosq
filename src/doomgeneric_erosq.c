@@ -31,5 +31,14 @@ void DG_SetWindowTitle(const char *title) { (void)title; }
 int main(int argc, char **argv)
 {
     doomgeneric_Create(argc, argv);
-    for (;;) doomgeneric_Tick();
+    /* Cap the loop to ~35 fps (Doom's tic rate). Uncapped, for(;;)Tick() pegs
+     * the CPU at 100% redrawing identical frames, which starves the kernel's
+     * boot-enabled hardware watchdog petter -> the device resets after ~100s.
+     * Sleeping the slack yields the CPU (fixes the reset) and saves battery. */
+    for (;;) {
+        uint32_t t0 = DG_GetTicksMs();
+        doomgeneric_Tick();
+        uint32_t dt = DG_GetTicksMs() - t0;
+        if (dt < 28) DG_SleepMs(28 - dt);   /* 28ms ~= 35 fps */
+    }
 }

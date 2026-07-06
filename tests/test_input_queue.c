@@ -24,12 +24,12 @@ int main(void)
 
     /* --- real button down+up in one cycle pass straight through (real HW
      *     timing; only the wheel is deferred) --- */
-    iq_feed(EV_KEY, 164, 1);                  /* play=fire down */
-    iq_feed(EV_KEY, 164, 0);                  /* fire up */
+    iq_feed(EV_KEY, 164, 1);                  /* play=enter down */
+    iq_feed(EV_KEY, 164, 0);                  /* enter up */
     int down = 0, up = 0;
     while (iq_poll(&k, &p)) {
-        if (k == KEY_FIRE && p) down = 1;
-        if (k == KEY_FIRE && !p) up = 1;
+        if (k == KEY_ENTER && p) down = 1;
+        if (k == KEY_ENTER && !p) up = 1;
     }
     assert(down && up);
 

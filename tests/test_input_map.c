@@ -8,7 +8,7 @@ int main(void)
     assert(map_event(EV_KEY, 163, 1, &k, &p) && k == KEY_DOWNARROW  && p == 1); /* next=back */
     assert(map_event(EV_KEY, 115, 0, &k, &p) && k == KEY_STRAFE_L   && p == 0); /* vol+ release */
     assert(map_event(EV_KEY, 114, 1, &k, &p) && k == KEY_STRAFE_R   && p == 1); /* vol- */
-    assert(map_event(EV_KEY, 164, 1, &k, &p) && k == KEY_FIRE       && p == 1); /* play=fire */
+    assert(map_event(EV_KEY, 164, 1, &k, &p) && k == KEY_ENTER      && p == 1); /* play=enter */
     assert(map_event(EV_KEY, 158, 1, &k, &p) && k == KEY_USE        && p == 1); /* back=use */
     assert(map_event(EV_KEY, 139, 1, &k, &p) && k == KEY_ESCAPE     && p == 1); /* menu=esc */
     assert(map_event(EV_KEY, 116, 1, &k, &p) == 0);                             /* power ignored */

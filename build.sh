@@ -19,6 +19,13 @@ done
 sed -i 's/#define DOOMGENERIC_RESX .*/#define DOOMGENERIC_RESX 320/' doomgeneric/doomgeneric/doomgeneric.h
 sed -i 's/#define DOOMGENERIC_RESY .*/#define DOOMGENERIC_RESY 200/' doomgeneric/doomgeneric/doomgeneric.h
 
+# --- FEATURE_SOUND drags <SDL_mixer.h> into i_sound.c, but nothing from it is
+#     used there (the real SDL backend is i_sdlsound.c, which we exclude). Drop
+#     the dead include so -DFEATURE_SOUND links our tinyalsa DG_sound_module.
+#     Idempotent. ---
+sed -i 's|#include <SDL_mixer.h>|/* SDL_mixer.h removed: erosq uses tinyalsa (src/sound_erosq.c) */|' \
+    doomgeneric/doomgeneric/i_sound.c
+
 # --- tinyalsa 1.1.1 static (same version erosq-ui pins) ---
 [ -f tinyalsa/src/libtinyalsa.a ] || {
   [ -d tinyalsa ] || git clone --depth 1 --branch 1.1.1 https://github.com/tinyalsa/tinyalsa.git tinyalsa

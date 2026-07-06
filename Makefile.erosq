@@ -1,6 +1,6 @@
 CROSS ?= mipsel-buildroot-linux-musl-
 CC = $(CROSS)gcc
-CFLAGS = -O2 -Idoomgeneric/doomgeneric -Isrc -Itinyalsa/include -DNORMALUNIX -DLINUX
+CFLAGS = -O2 -Idoomgeneric/doomgeneric -Isrc -Itinyalsa/include -DNORMALUNIX -DLINUX -DFEATURE_SOUND
 SKIP = doomgeneric_xlib doomgeneric_sdl doomgeneric_win doomgeneric_soso doomgeneric_allegro doomgeneric_emscripten doomgeneric_linuxvt doomgeneric_sosox i_allegromusic i_allegrosound i_sdlmusic i_sdlsound
 DGSRC = $(filter-out $(addprefix doomgeneric/doomgeneric/,$(addsuffix .c,$(SKIP))),$(wildcard doomgeneric/doomgeneric/*.c))
 SRC = $(DGSRC) $(wildcard src/*.c)

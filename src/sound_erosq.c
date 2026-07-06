@@ -98,6 +98,7 @@ static int I_EQ_StartSound(sfxinfo_t *sfx, int channel, int vol, int sep)
     if (lumplen < 8 || data[0] != 0x03 || data[1] != 0x00) return -1;
     int rate = (data[3] << 8) | data[2];
     unsigned int length = (data[7]<<24)|(data[6]<<16)|(data[5]<<8)|data[4];
+    if (rate <= 0) return -1;                     /* guard divide-by-zero in resample path */
     if (length > lumplen - 8 || length <= 48) return -1;
     I_EQ_StartChannel(channel, data + 24, (int)(length - 32), rate, vol);
     return channel;

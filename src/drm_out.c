@@ -58,7 +58,10 @@ int drm_open(void)
     if (px == MAP_FAILED) { perror("mmap"); px = NULL; return -1; }
     fb_id = fbc.fb_id; pitch = cd.pitch;
 
-    drm_present();   /* initial modeset */
+    /* Initial modeset. Must not swallow failure: if we're not DRM master yet
+     * (known erosq splash/handoff race) SETCRTC fails, and reporting success
+     * would leave DG_Init running the game full-speed against a black panel. */
+    if (drm_present() != 0) { fprintf(stderr, "drm_open: initial modeset failed\n"); return -1; }
     return 0;
 }
 
@@ -68,10 +71,11 @@ uint16_t *drm_pixels(int *stride_px)
     return px;
 }
 
-void drm_present(void)
+int drm_present(void)
 {
     struct drm_mode_crtc sc = { .crtc_id = crtc_id, .fb_id = fb_id,
         .set_connectors_ptr = (uintptr_t)&conn_id, .count_connectors = 1,
         .mode_valid = 1, .mode = mode };
-    if (ioctl(fd, DRM_IOCTL_MODE_SETCRTC, &sc)) perror("setcrtc");
+    if (ioctl(fd, DRM_IOCTL_MODE_SETCRTC, &sc)) { perror("setcrtc"); return -1; }
+    return 0;
 }

@@ -1,29 +1,17 @@
-/* Poll every /dev/input/event* non-blocking, translate via map_event(), and
- * queue results in a small ring that DG_GetKey drains one-per-call. The wheel
- * (EV_REL) is a discrete turn: enqueue a press immediately followed by a
- * release so Doom turns a step per detent instead of latching. */
+/* Device I/O half of input: open every /dev/input/event*, read raw events
+ * non-blocking, and feed them to the pure input_queue (which owns mapping and
+ * the wheel's cross-tic release timing). DG_GetKey -> input_poll -> iq_poll. */
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <linux/input.h>   /* struct input_event; also brings EV_KEY etc. */
+#include <linux/input.h>   /* struct input_event */
 #include "input_ev.h"
-#include "input_map.h"
+#include "input_queue.h"
 
 #define MAXFDS 10
-#define RING   128
 
 static int fds[MAXFDS];
 static int nfds;
-
-static struct { unsigned char key; int pressed; } ring[RING];
-static int head, tail;   /* tail==head => empty */
-
-static void push(unsigned char key, int pressed)
-{
-    int n = (head + 1) % RING;
-    if (n == tail) return;            /* full: drop (input is best-effort) */
-    ring[head].key = key; ring[head].pressed = pressed; head = n;
-}
 
 void input_open(void)
 {
@@ -35,25 +23,16 @@ void input_open(void)
     }
 }
 
-/* Drain all pending kernel events into the ring. */
-static void drain(void)
+static void drain_fds(void)
 {
     struct input_event ev;
-    for (int i = 0; i < nfds; i++) {
-        while (read(fds[i], &ev, sizeof ev) == (ssize_t)sizeof ev) {
-            unsigned char key; int pressed;
-            if (!map_event(ev.type, ev.code, ev.value, &key, &pressed)) continue;
-            push(key, pressed);
-            if (ev.type == EV_REL) push(key, 0);  /* discrete wheel tap: auto-release */
-        }
-    }
+    for (int i = 0; i < nfds; i++)
+        while (read(fds[i], &ev, sizeof ev) == (ssize_t)sizeof ev)
+            iq_feed(ev.type, ev.code, ev.value);
 }
 
 int input_poll(unsigned char *doomkey, int *pressed)
 {
-    if (tail == head) drain();
-    if (tail == head) return 0;
-    *doomkey = ring[tail].key; *pressed = ring[tail].pressed;
-    tail = (tail + 1) % RING;
-    return 1;
+    drain_fds();
+    return iq_poll(doomkey, pressed);
 }

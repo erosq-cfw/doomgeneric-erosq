@@ -11,6 +11,9 @@
 #include <stdlib.h>
 #include <time.h>
 #include "doomgeneric.h"
+#include "doomkeys.h"
+#include "doomtype.h"
+#include "doomstat.h"    /* menuactive */
 #include "drm_out.h"
 #include "video_blit.h"
 #include "input_ev.h"
@@ -25,7 +28,21 @@ void DG_DrawFrame(void)
 }
 void DG_SleepMs(uint32_t ms) { struct timespec t = { ms/1000, (long)(ms%1000)*1000000L }; nanosleep(&t, 0); }
 uint32_t DG_GetTicksMs(void) { struct timespec t; clock_gettime(CLOCK_MONOTONIC, &t); return (uint32_t)(t.tv_sec*1000 + t.tv_nsec/1000000); }
-int DG_GetKey(int *pressed, unsigned char *key) { return input_poll(key, pressed); }
+int DG_GetKey(int *pressed, unsigned char *key)
+{
+    int r = input_poll(key, pressed);
+    /* The wheel emits turn keys (LEFT/RIGHT) for gameplay; while a menu is open,
+     * remap to UP/DOWN so it navigates items. LEFT/RIGHT only ever come from the
+     * wheel, so buttons are unaffected. Swap the two lines if the feel is reversed.
+     * ponytail: if the menu opens/closes between a detent's press and its one-tic
+     * deferred release, that release keeps the old mapping — harmless, self-clears
+     * on the next detent. */
+    if (r && menuactive) {
+        if (*key == KEY_LEFTARROW)       *key = KEY_UPARROW;
+        else if (*key == KEY_RIGHTARROW) *key = KEY_DOWNARROW;
+    }
+    return r;
+}
 void DG_SetWindowTitle(const char *title) { (void)title; }
 
 int main(int argc, char **argv)

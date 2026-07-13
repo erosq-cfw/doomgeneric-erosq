@@ -2,13 +2,11 @@
 # Launched from erosq-ui Extras -> Games (no args). Free RAM by stopping MPD,
 # run Doom, then restore MPD. -mb caps Doom's zone heap for the ~7.5MB board.
 #
-# -nosound: HITL-verified 2026-07-06 that streaming SFX to the ES9018K2M via
-# tinyalsa reliably resets the device after 15-100s (watchdog reset; -nosound
-# runs stable indefinitely, confirmed 150s+). The sound backend itself is
-# correct (SFX are audible), but sustained PCM streaming wedges the audio DMA
-# on this board. Re-enable by dropping -nosound once the driver path is fixed
-# (needs serial-console capture of the hang). See INTERFACES.md / memory.
+# Sound ON: the XRUN-path kernel panic (audio DAI-link .nonatomic sleep-in-atomic,
+# code-review C1) was fixed and HITL-verified 2026-07-06 on kernel #185 — Doom
+# with SFX ran clean (180s automated + live interactive play, audible, no reset).
+# SFX route to the ES9018K2M / headphone jack (card 0), not BT.
 was_up=; pgrep mpd >/dev/null && was_up=1
 [ "$was_up" ] && { mpc stop 2>/dev/null; killall mpd 2>/dev/null; }
-/usr/bin/doomgeneric -iwad /media/sd/games/DOOM1.WAD -mb 4 -nosound
+/usr/bin/doomgeneric -iwad /media/sd/games/DOOM1.WAD -mb 4
 [ "$was_up" ] && mpd 2>/dev/null

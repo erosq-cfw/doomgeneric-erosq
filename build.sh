@@ -25,6 +25,11 @@ sed -i 's/#define DOOMGENERIC_RESY .*/#define DOOMGENERIC_RESY 200/' doomgeneric
 #     Idempotent. ---
 sed -i 's/^int key_fire = KEY_FIRE;/int key_fire = KEY_ENTER;/' doomgeneric/doomgeneric/m_controls.c
 sed -i "s/^int key_menu_confirm   = 'y';/int key_menu_confirm   = KEY_ENTER;/" doomgeneric/doomgeneric/m_controls.c
+# key_fire=ENTER collides with key_message_refresh (also KEY_ENTER by default):
+# HU_Responder runs before the fire keydown in G_Responder and eats ENTER as
+# "refresh message", so Play never fired in-game. Move refresh to '/' (no erosq
+# button emits it; matches doom's Strife default). Idempotent.
+sed -i "s|^int key_message_refresh = KEY_ENTER;|int key_message_refresh = '/';|" doomgeneric/doomgeneric/m_controls.c
 
 # --- FEATURE_SOUND drags <SDL_mixer.h> into i_sound.c, but nothing from it is
 #     used there (the real SDL backend is i_sdlsound.c, which we exclude). Drop

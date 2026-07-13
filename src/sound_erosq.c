@@ -50,11 +50,8 @@ static boolean I_EQ_Init(boolean use_sfx_prefix)
     cfg.channels = OUT_CH;
     cfg.rate = OUT_RATE;
     cfg.format = PCM_FORMAT_S16_LE;
-    /* Large buffer (~370ms) so Doom's frame jitter never drains it: an underrun
-     * makes tinyalsa stop+re-prepare the DMA, and this board hangs on the audio
-     * DMA stop path -> watchdog reset. Keeping the ring full avoids that path. */
     cfg.period_size = 2048;
-    cfg.period_count = 8;
+    cfg.period_count = 8;             /* buffer_size = 16384 frames */
     pcm = pcm_open(0, 0, PCM_OUT, &cfg);
     if (!pcm || !pcm_is_ready(pcm)) {
 #ifdef SFX_DEBUG

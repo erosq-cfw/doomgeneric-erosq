@@ -25,6 +25,9 @@ int main(void)
     assert(map_event(EV_KEY, 311, 1, &k, &p) && k == KEY_STRAFE_R   && p == 1); /* R1 */
     assert(map_event(EV_KEY, 314, 1, &k, &p) && k == KEY_TAB        && p == 1); /* select=automap */
     assert(map_event(EV_KEY, 315, 1, &k, &p) && k == KEY_ESCAPE     && p == 1); /* start=menu */
+    assert(map_event(EV_KEY, 308, 1, &k, &p) && k == KEY_RALT       && p == 1); /* Y=strafe hold */
+    assert(map_event(EV_KEY, 312, 1, &k, &p) && k == 0xb0           && p == 1); /* L2=prev weapon */
+    assert(map_event(EV_KEY, 313, 1, &k, &p) && k == 0xb1           && p == 1); /* R2=next weapon */
     /* d-pad hat: press emits direction, return-to-0 emits that key's release */
     assert(map_event(EV_ABS, ABS_HAT0Y, -1, &k, &p) && k == KEY_UPARROW    && p == 1);
     assert(map_event(EV_ABS, ABS_HAT0Y,  0, &k, &p) && k == KEY_UPARROW    && p == 0);
@@ -36,5 +39,13 @@ int main(void)
     assert(map_event(EV_ABS, ABS_HAT0Y,  1, &k, &p) && k == KEY_DOWNARROW  && p == 1);
     assert(map_event(EV_ABS, ABS_HAT0X,  0, &k, &p) && k == KEY_LEFTARROW  && p == 0);
     assert(map_event(EV_ABS, ABS_HAT0Y,  0, &k, &p) && k == KEY_DOWNARROW  && p == 0);
+    /* left analog stick: deadzone, press past threshold, release near centre */
+    assert(map_event(EV_ABS, ABS_X, 127, &k, &p) == 0);                          /* centred: no event */
+    assert(map_event(EV_ABS, ABS_X,  10, &k, &p) && k == KEY_LEFTARROW  && p == 1); /* full left */
+    assert(map_event(EV_ABS, ABS_X, 127, &k, &p) && k == KEY_LEFTARROW  && p == 0); /* recentre: release */
+    assert(map_event(EV_ABS, ABS_Y, 255, &k, &p) && k == KEY_DOWNARROW  && p == 1); /* full down */
+    assert(map_event(EV_ABS, ABS_X,   0, &k, &p) && k == KEY_LEFTARROW  && p == 1); /* X independent of Y */
+    assert(map_event(EV_ABS, ABS_Y, 127, &k, &p) && k == KEY_DOWNARROW  && p == 0); /* Y recentre keeps X */
+    assert(map_event(EV_ABS, ABS_X, 130, &k, &p) && k == KEY_LEFTARROW  && p == 0); /* X into deadzone: release */
     return 0;
 }

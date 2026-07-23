@@ -14,6 +14,8 @@
 #define REL_WHEEL 0x08
 #define ABS_HAT0X 0x10   /* BT gamepad d-pad axes: -1/0/+1 */
 #define ABS_HAT0Y 0x11
+#define ABS_X     0x00   /* BT gamepad left stick, 0..255 centered ~127 */
+#define ABS_Y     0x01
 #endif
 
 int map_event(uint16_t type, uint16_t code, int value, unsigned char *doomkey, int *pressed);

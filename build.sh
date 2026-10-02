@@ -2,7 +2,7 @@
 set -e
 cd "$(dirname "$0")"
 ROOT=$(pwd)
-BR_HOST=buildroot-2026.05/output/host
+BR_HOST=buildroot-2026.08/output/host
 export PATH="$BR_HOST/bin:$PATH"
 CROSS=mipsel-buildroot-linux-musl-
 

@@ -2,7 +2,9 @@
 set -e
 cd "$(dirname "$0")"
 ROOT=$(pwd)
-BR_HOST=buildroot-2026.08/output/host
+# Buildroot host dir; defaults to a buildroot-2026.08 checkout next to this repo.
+EROSQ_ROOT=${EROSQ_ROOT:-$(cd .. && pwd)}
+BR_HOST=${BR_HOST:-$EROSQ_ROOT/buildroot-2026.08/output/host}
 export PATH="$BR_HOST/bin:$PATH"
 CROSS=mipsel-buildroot-linux-musl-
 

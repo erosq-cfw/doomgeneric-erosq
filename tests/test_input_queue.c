@@ -8,7 +8,7 @@ int main(void)
     unsigned char k; int p;
 
     /* --- wheel: press and release must NOT share a poll cycle --- */
-    iq_feed(EV_REL, REL_WHEEL, 1);           /* turn left */
+    iq_feed(EV_REL, REL_X, -1);             /* turn left (encoder CCW) */
     int press_c1 = 0, release_c1 = 0;
     while (iq_poll(&k, &p)) {                 /* drain cycle 1 (one tic) */
         if (k == KEY_LEFTARROW && p) press_c1 = 1;
